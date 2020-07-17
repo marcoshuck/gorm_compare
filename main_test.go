@@ -22,19 +22,6 @@ func setup() (*gorm.DB, error) {
 	return db, nil
 }
 
-func populate(db *gorm.DB) error {
-	for i := 0; i < 10000; i++ {
-		q := db.Model(&Test{}).Save(&Test{
-			Name:  fmt.Sprintf("Entity-%d", i),
-		})
-		err := q.Error
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func BenchmarkSingleQueryCreate(b *testing.B) {
 	db, err := setup()
 	defer db.Close()
