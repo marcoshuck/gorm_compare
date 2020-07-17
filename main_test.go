@@ -1,3 +1,12 @@
+// Results:
+// BenchmarkSingleQueryCreate
+// BenchmarkSingleQueryCreate-4    	      22	  49663533 ns/op
+//
+// BenchmarkMultiQueryCreate
+// BenchmarkMultiQueryCreate-4     	      24	  48899667 ns/op
+//
+// BenchmarkMultiQueryCreateTx
+// BenchmarkMultiQueryCreateTx-4   	      58	  17333588 ns/op
 package main
 
 import (
@@ -42,6 +51,24 @@ func BenchmarkSingleQueryCreate(b *testing.B) {
 }
 
 func BenchmarkMultiQueryCreate(b *testing.B) {
+	db, err := setup()
+	defer db.Close()
+	if err != nil {
+		b.Skip()
+	}
+	for n := 0; n < b.N; n++ {
+		for i := 0; i < 3; i++ {
+			db = db.Save(&Test{
+				Name:  fmt.Sprintf("Entity-%d", i),
+			})
+		}
+		if err != nil {
+			b.Skip()
+		}
+	}
+}
+
+func BenchmarkMultiQueryCreateTx(b *testing.B) {
 	db, err := setup()
 	defer db.Close()
 	if err != nil {
