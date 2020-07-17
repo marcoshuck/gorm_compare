@@ -3,15 +3,15 @@
 //goarch: amd64
 //pkg: github.com/marcoshuck/gorm_compare
 //BenchmarkSingleQueryCreate
-//BenchmarkSingleQueryCreate-4    	      20	  51741170 ns/op
+//BenchmarkSingleQueryCreate-4    	      24	  45488545 ns/op
 //BenchmarkMultiQueryCreate
-//BenchmarkMultiQueryCreate-4     	      24	  45862690 ns/op
+//BenchmarkMultiQueryCreate-4     	      22	  48913798 ns/op
 //BenchmarkMultiQueryCreateTx
-//BenchmarkMultiQueryCreateTx-4   	      56	  18557073 ns/op
+//BenchmarkMultiQueryCreateTx-4   	      54	  19400111 ns/op
 //BenchmarkMultiQueryUpdate
-//BenchmarkMultiQueryUpdate-4     	       1	1679886780 ns/op
+//BenchmarkMultiQueryUpdate-4     	       1	1793388137 ns/op
 //BenchmarkSingleQueryUpdate
-//BenchmarkSingleQueryUpdate-4    	       1	1693897196 ns/op
+//BenchmarkSingleQueryUpdate-4    	       1	1849217898 ns/op
 //PASS
 //
 //Process finished with exit code 0
@@ -111,15 +111,17 @@ func BenchmarkMultiQueryUpdate(b *testing.B) {
 		b.Skip()
 	}
 	for n := 0; n < b.N; n++ {
-		db.DropTableIfExists(&Test{})
-		db.AutoMigrate(&Test{})
-		populate(db)
-		b.StartTimer()
-		var t Test
-		db.Model(&Test{}).Where("name = ?", "Entity-1").First(&t)
-		t.Name = "Tested"
-		db.Model(&Test{}).Where("name = ?", "Entity-1").Update(&t)
-		b.StopTimer()
+		for i := 0; i < 10; i++ {
+			db.DropTableIfExists(&Test{})
+			db.AutoMigrate(&Test{})
+			populate(db)
+			b.StartTimer()
+			var t Test
+			db.Model(&Test{}).Where("name = ?", fmt.Sprintf("Entity-%d", i)).First(&t)
+			t.Name = "Tested"
+			db.Model(&Test{}).Where("name = ?", fmt.Sprintf("Entity-%d", i)).Update(&t)
+			b.StopTimer()
+		}
 	}
 }
 
@@ -130,14 +132,13 @@ func BenchmarkSingleQueryUpdate(b *testing.B) {
 		b.Skip()
 	}
 	for n := 0; n < b.N; n++ {
-		db.DropTableIfExists(&Test{})
-		db.AutoMigrate(&Test{})
-		populate(db)
-		b.StartTimer()
-		t := Test{
-			Name: "Tested",
+		for i := 0; i < 10; i++ {
+			db.DropTableIfExists(&Test{})
+			db.AutoMigrate(&Test{})
+			populate(db)
+			b.StartTimer()
+			db.Model(&Test{}).Where("name = ?", fmt.Sprintf("Entity-%d", i)).Update(&Test{ Name: "Tested" })
+			b.StopTimer()
 		}
-		db.Model(&Test{}).Where("name = ?", "Entity-1").Update(&t)
-		b.StopTimer()
 	}
 }
