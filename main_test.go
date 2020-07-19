@@ -12,6 +12,7 @@ type Test struct {
 }
 
 func setup() (*gorm.DB, error) {
+	// TODO: Update user, password, host and database name.
 	db, err := gorm.Open("mysql", "root:1234@(172.17.0.2)/test?parseTime=true")
 	if err != nil {
 		return nil, err
