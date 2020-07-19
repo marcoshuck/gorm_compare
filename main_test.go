@@ -1,27 +1,9 @@
-// Results:
-//goos: linux
-//goarch: amd64
-//pkg: github.com/marcoshuck/gorm_compare
-//BenchmarkSingleQueryCreate
-//BenchmarkSingleQueryCreate-4    	      24	  45488545 ns/op
-//BenchmarkMultiQueryCreate
-//BenchmarkMultiQueryCreate-4     	      22	  48913798 ns/op
-//BenchmarkMultiQueryCreateTx
-//BenchmarkMultiQueryCreateTx-4   	      54	  19400111 ns/op
-//BenchmarkMultiQueryUpdate
-//BenchmarkMultiQueryUpdate-4     	       1	1793388137 ns/op
-//BenchmarkSingleQueryUpdate
-//BenchmarkSingleQueryUpdate-4    	       1	1849217898 ns/op
-//PASS
-//
-//Process finished with exit code 0
 package main
 
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
-	"testing"
 )
 
 type Test struct {
@@ -47,98 +29,5 @@ func populate(db *gorm.DB) {
 	}
 }
 
-func BenchmarkSingleQueryCreate(b *testing.B) {
-	db, err := setup()
-	defer db.Close()
-	if err != nil {
-		b.Skip()
-	}
-	for n := 0; n < b.N; n++ {
-		for i := 0; i < 3; i++ {
-			q := db.Model(&Test{}).Save(&Test{
-				Name:  fmt.Sprintf("Entity-%d", i),
-			})
-			err = q.Error
-			if err != nil {
-				b.Skip()
-			}
-		}
-	}
-}
 
-func BenchmarkMultiQueryCreate(b *testing.B) {
-	db, err := setup()
-	defer db.Close()
-	if err != nil {
-		b.Skip()
-	}
-	for n := 0; n < b.N; n++ {
-		for i := 0; i < 3; i++ {
-			db.Save(&Test{
-				Name:  fmt.Sprintf("Entity-%d", i),
-			})
-		}
-	}
-}
 
-func BenchmarkMultiQueryCreateTx(b *testing.B) {
-	db, err := setup()
-	defer db.Close()
-	if err != nil {
-		b.Skip()
-	}
-	for n := 0; n < b.N; n++ {
-		b.StartTimer()
-		err = db.Transaction(func(tx *gorm.DB) error {
-			for i := 0; i < 3; i++ {
-				tx = tx.Save(&Test{
-					Name:  fmt.Sprintf("Entity-%d", i),
-				})
-			}
-			return tx.Error
-		})
-		b.StopTimer()
-		if err != nil {
-			b.Skip()
-		}
-	}
-}
-
-func BenchmarkMultiQueryUpdate(b *testing.B) {
-	db, err := setup()
-	defer db.Close()
-	if err != nil {
-		b.Skip()
-	}
-	for n := 0; n < b.N; n++ {
-		for i := 0; i < 10; i++ {
-			db.DropTableIfExists(&Test{})
-			db.AutoMigrate(&Test{})
-			populate(db)
-			b.StartTimer()
-			var t Test
-			db.Model(&Test{}).Where("name = ?", fmt.Sprintf("Entity-%d", i)).First(&t)
-			t.Name = "Tested"
-			db.Model(&Test{}).Where("name = ?", fmt.Sprintf("Entity-%d", i)).Update(&t)
-			b.StopTimer()
-		}
-	}
-}
-
-func BenchmarkSingleQueryUpdate(b *testing.B) {
-	db, err := setup()
-	defer db.Close()
-	if err != nil {
-		b.Skip()
-	}
-	for n := 0; n < b.N; n++ {
-		for i := 0; i < 10; i++ {
-			db.DropTableIfExists(&Test{})
-			db.AutoMigrate(&Test{})
-			populate(db)
-			b.StartTimer()
-			db.Model(&Test{}).Where("name = ?", fmt.Sprintf("Entity-%d", i)).Update(&Test{ Name: "Tested" })
-			b.StopTimer()
-		}
-	}
-}
